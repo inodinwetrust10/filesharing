@@ -8,3 +8,7 @@ type Broadcast struct {
 	Type    string
 	Content []string
 }
+
+type FormatError struct {
+	Message string
+}

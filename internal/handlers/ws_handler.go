@@ -21,10 +21,41 @@ func Upgrade(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	go handleConnections(conn)
+	go handleConnections(conn, r)
 }
 
-func handleConnections(conn *websocket.Conn) {
+func handleConnections(conn *websocket.Conn, r *http.Request) {
+	var body models.ConnectionRequest
+	if err := conn.ReadJSON(&body); err != nil || body.Type != "Request" {
+		log.Print("bad request")
+		conn.Close()
+		return
+	}
+	username := body.Username
+
+	mtx.Lock()
+	if _, ok := ActiveUsers[username]; ok {
+		log.Printf("username %s is already taken", username)
+		mtx.Unlock()
+		conn.Close()
+		return
+	}
+	mtx.Lock()
+	ActiveUsers[body.Username] = conn
+	mtx.Unlock()
+	BroadcastAllActiveUsers()
+
+	defer func() {
+		mtx.Lock()
+		delete(ActiveUsers, username)
+		mtx.Unlock()
+		conn.Close()
+		BroadcastAllActiveUsers()
+	}()
+
+	for {
+		var msg models.FileTransferRequest
+	}
 }
 
 var mtx sync.Mutex

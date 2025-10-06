@@ -2,6 +2,6 @@
 package models
 
 type ConnectionRequest struct {
-	Type     string
-	Username string
+	Type     string `json:"type"`
+	Username string `json:"username"`
 }
