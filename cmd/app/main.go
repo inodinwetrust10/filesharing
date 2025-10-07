@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	port := "8080"
+	port := ":8080"
 	Router := http.NewServeMux()
 	server := &http.Server{
 		Addr:    port,
@@ -20,7 +20,7 @@ func main() {
 
 	go func() {
 		log.Printf("server starting on port: %s", port)
-		if err := server.ListenAndServe(); err != nil {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("error starting the server: %+v", err)
 		}
 	}()

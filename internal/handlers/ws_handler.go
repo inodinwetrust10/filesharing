@@ -21,17 +21,17 @@ func Upgrade(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	go handleConnections(conn, r)
+	go handleConnections(conn)
 }
 
-func handleConnections(conn *websocket.Conn, r *http.Request) {
-	var body models.ConnectionRequest
-	if err := conn.ReadJSON(&body); err != nil || body.Type != "Request" {
+func handleConnections(conn *websocket.Conn) {
+	var connectionRequest models.Request
+	if err := conn.ReadJSON(&connectionRequest); err != nil || connectionRequest.Type != "connectionRequest" {
 		log.Print("bad request")
 		conn.Close()
 		return
 	}
-	username := body.Username
+	username := connectionRequest.Username
 
 	mtx.Lock()
 	if _, ok := ActiveUsers[username]; ok {
@@ -40,8 +40,7 @@ func handleConnections(conn *websocket.Conn, r *http.Request) {
 		conn.Close()
 		return
 	}
-	mtx.Lock()
-	ActiveUsers[body.Username] = conn
+	ActiveUsers[connectionRequest.Username] = conn
 	mtx.Unlock()
 	BroadcastAllActiveUsers()
 
@@ -55,6 +54,15 @@ func handleConnections(conn *websocket.Conn, r *http.Request) {
 
 	for {
 		var msg models.FileTransferRequest
+		if err := conn.ReadJSON(&msg); err != nil {
+			break
+		}
+		switch msg.Type {
+		case "sendFile":
+			{
+				SendFiles(conn, &msg)
+			}
+		}
 	}
 }
 

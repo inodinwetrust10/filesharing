@@ -1,7 +1,8 @@
 // Package models
 package models
 
-type ConnectionRequest struct {
+type Request struct {
 	Type     string `json:"type"`
+	Content  any    `json:"content"`
 	Username string `json:"username"`
 }
