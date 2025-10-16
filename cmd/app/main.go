@@ -8,6 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/inodinwetrust/filesharing/internal/handlers"
 )
 
 func main() {
@@ -17,6 +19,8 @@ func main() {
 		Addr:    port,
 		Handler: Router,
 	}
+
+	Router.HandleFunc("/", handlers.Upgrade)
 
 	go func() {
 		log.Printf("server starting on port: %s", port)

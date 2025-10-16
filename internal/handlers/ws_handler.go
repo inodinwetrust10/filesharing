@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/inodinwetrust/filesharing/internal/models"
@@ -13,8 +14,11 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
 }
-var ActiveUsers models.ActiveUsers
+var ActiveUsers = make(models.ActiveUsers)
 
 func Upgrade(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -26,22 +30,34 @@ func Upgrade(w http.ResponseWriter, r *http.Request) {
 
 func handleConnections(conn *websocket.Conn) {
 	var connectionRequest models.Request
-	if err := conn.ReadJSON(&connectionRequest); err != nil || connectionRequest.Type != "connectionRequest" {
-		log.Print("bad request")
+
+	err := conn.ReadJSON(&connectionRequest)
+	log.Printf("Received connection request data: %+v", connectionRequest)
+	if err != nil || connectionRequest.Type != "connectionRequest" {
+		log.Printf("Bad request received. Error: %v", err)
+		conn.WriteJSON(map[string]string{
+			"type": "bad request",
+		})
 		conn.Close()
 		return
 	}
 	username := connectionRequest.Username
-
 	mtx.Lock()
 	if _, ok := ActiveUsers[username]; ok {
 		log.Printf("username %s is already taken", username)
 		mtx.Unlock()
+		conn.WriteJSON(map[string]string{
+			"type": "username already taken",
+		})
 		conn.Close()
 		return
 	}
 	ActiveUsers[connectionRequest.Username] = conn
 	mtx.Unlock()
+	conn.WriteJSON(map[string]string{
+		"type": "connectionSuccess",
+	})
+	time.Sleep(100 * time.Millisecond)
 	BroadcastAllActiveUsers()
 
 	defer func() {
