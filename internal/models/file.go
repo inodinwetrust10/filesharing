@@ -1,10 +1,16 @@
 package models
 
+type FileMetadata struct {
+	Name string `json:"name"`
+	Type string `json:"string"`
+	Size int64  `json:"size"`
+}
+
 type FileTransferRequest struct {
-	Type           string `json:"type"`
-	SentTo         string `json:"recipientUsername"`
-	FileName       string `json:"fileName"`
-	SenderUsername string `json:"senderUsername"`
+	From    string        `json:"from,omitempty"`
+	To      string        `json:"to"`
+	Message string        `json:"message"`
+	Payload *FileMetadata `json:"payload,omitempty"`
 }
 
 type FileNotification struct {

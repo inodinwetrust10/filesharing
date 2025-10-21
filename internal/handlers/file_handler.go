@@ -8,20 +8,20 @@ import (
 )
 
 func SendFiles(conn *websocket.Conn, msg *models.FileTransferRequest) {
-	senderUsername := msg.SenderUsername
-	recipientUsername := msg.SentTo
+	senderUsername := msg.From
+	recipientUsername := msg.To
 	mtx.Lock()
-	recipientConn, ok := ActiveUsers[msg.SentTo]
+	recipientConn, ok := ActiveUsers[msg.To]
 	mtx.Unlock()
 
 	if !ok {
-		log.Printf("recipient is disconnected or not found %s", msg.SentTo)
+		log.Printf("recipient is disconnected or not found %s", msg.To)
 		return
 	}
 	notification := models.FileNotification{
 		Type: "incomingFile",
 		Content: map[string]string{
-			"fileName": msg.FileName,
+			"fileName": msg.Payload.Name,
 			"sender":   senderUsername,
 		},
 	}
